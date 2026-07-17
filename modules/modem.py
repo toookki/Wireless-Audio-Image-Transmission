@@ -63,9 +63,7 @@ def generate_sync_chirp() -> np.ndarray:
     sample_count = int(round(SYNC_DURATION_S * SAMPLE_RATE))
     t = np.arange(sample_count, dtype=np.float64) / SAMPLE_RATE
     sweep_rate = (SYNC_END_HZ - SYNC_START_HZ) / SYNC_DURATION_S
-    phase = 2.0 * np.pi * (
-        SYNC_START_HZ * t + 0.5 * sweep_rate * t * t
-    )
+    phase = 2.0 * np.pi * (SYNC_START_HZ * t + 0.5 * sweep_rate * t * t)
     chirp = np.sin(phase)
 
     # Pequeño fade para evitar clicks al reproducir.
@@ -80,9 +78,7 @@ def generate_sync_chirp() -> np.ndarray:
 def _modulate_channel(symbols: np.ndarray, channel: ChannelConfig) -> np.ndarray:
     """Modula un subcanal con fase continua."""
 
-    logical = np.concatenate(
-        [np.asarray(PREAMBLE_SYMBOLS, dtype=np.uint8), np.asarray(symbols, dtype=np.uint8)]
-    )
+    logical = np.concatenate([np.asarray(PREAMBLE_SYMBOLS, dtype=np.uint8), np.asarray(symbols, dtype=np.uint8)])
     repeated = np.repeat(logical, REPETITION_FACTOR)
     frequencies = np.asarray(channel.frequencies_hz, dtype=np.float64)[repeated]
     sample_frequencies = np.repeat(frequencies, SAMPLES_PER_SLOT)
@@ -133,9 +129,7 @@ def find_sync(audio: np.ndarray) -> SyncResult:
     sync_start = int(np.argmax(normalized))
     score = float(normalized[sync_start])
     if score < SYNC_MIN_CORRELATION:
-        raise ValueError(
-            f"No se encontró sincronización confiable: correlación={score:.3f}."
-        )
+        raise ValueError(f"No se encontró sincronización confiable: correlación={score:.3f}.")
 
     data_start = sync_start + len(sync) + int(round(GUARD_DURATION_S * SAMPLE_RATE))
     return SyncResult(sync_start, data_start, score)
@@ -159,10 +153,7 @@ def _slot_energies(slots: np.ndarray, channel: ChannelConfig) -> np.ndarray:
     return energies
 
 
-def demodulate_channel(
-    data_audio: np.ndarray,
-    channel: ChannelConfig,
-) -> ChannelDemodulation:
+def demodulate_channel(data_audio: np.ndarray, channel: ChannelConfig) -> ChannelDemodulation:
     """Demodula todos los símbolos disponibles de un subcanal."""
 
     slot_count = len(data_audio) // SAMPLES_PER_SLOT
@@ -170,9 +161,7 @@ def demodulate_channel(
     if slot_count <= 0:
         raise ValueError("No hay suficientes muestras para demodular.")
 
-    slots = data_audio[: slot_count * SAMPLES_PER_SLOT].reshape(
-        slot_count, SAMPLES_PER_SLOT
-    )
+    slots = data_audio[: slot_count * SAMPLES_PER_SLOT].reshape(slot_count, SAMPLES_PER_SLOT)
     energies = _slot_energies(slots, channel)
 
     logical_count = slot_count // REPETITION_FACTOR
@@ -190,8 +179,4 @@ def demodulate_channel(
     score = float(np.mean(decisions[:preamble_length] == expected))
     payload_symbols = decisions[preamble_length:]
 
-    return ChannelDemodulation(
-        symbols=payload_symbols,
-        preamble_score=score,
-        mean_decision_margin=float(np.mean(margins)),
-    )
+    return ChannelDemodulation(symbols=payload_symbols, preamble_score=score, mean_decision_margin=float(np.mean(margins)))

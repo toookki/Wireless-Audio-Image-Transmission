@@ -11,8 +11,8 @@ def main() -> None:
     root = Path(__file__).resolve().parents[1]
     image_path = root / "data" / "input_image.png"
     text_path = root / "data" / "input_text.txt"
-    wav_path = root / "outputs" / "transmission.wav"
-    decoded_dir = root / "outputs" / "decoded"
+    wav_path = root / "outputs" / "digital_loop" / "transmission.wav"
+    decoded_dir = root / "outputs" / "digital_loop" / "decoded"
 
     reference_text = text_path.read_text(encoding="utf-8").strip()
     info = create_transmission(image_path, reference_text, wav_path)

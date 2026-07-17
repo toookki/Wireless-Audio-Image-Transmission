@@ -28,11 +28,7 @@ class DecodedTransmission:
     sync_correlation: float
 
 
-def decode_transmission(
-    input_wav: str | Path,
-    *,
-    strict_crc: bool = True,
-) -> DecodedTransmission:
+def decode_transmission(input_wav: str | Path, *, strict_crc: bool = True) -> DecodedTransmission:
     """Decodifica una grabación completa.
 
     Por defecto exige CRC correcto. ``strict_crc=False`` se reserva para los
@@ -66,9 +62,7 @@ def decode_transmission(
         raise PacketError(f"No fue posible validar todos los canales:\n{details}")
 
     image = packets_to_image(packets)
-    text = packets[3].payload.decode(
-        "utf-8", errors="strict" if strict_crc else "replace"
-    )
+    text = packets[3].payload.decode("utf-8", errors="strict" if strict_crc else "replace")
 
     return DecodedTransmission(
         image=image,
@@ -85,6 +79,4 @@ def save_decoded(decoded: DecodedTransmission, output_dir: str | Path) -> None:
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     decoded.image.save(output_dir / "reconstructed_image.png")
-    (output_dir / "reconstructed_text.txt").write_text(
-        decoded.text + "\n", encoding="utf-8"
-    )
+    (output_dir / "reconstructed_text.txt").write_text(decoded.text + "\n", encoding="utf-8")

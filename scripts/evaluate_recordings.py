@@ -14,31 +14,19 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 
-from modules.metrics import (
-    channel_value_error_rates,
-    load_reference,
-    pixel_error_rate,
-    text_symbol_error_rate,
-)
+from modules.metrics import (channel_value_error_rates, load_reference, pixel_error_rate, text_symbol_error_rate)
 from modules.receiver import decode_transmission
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 
-def evaluate_folder(
-    recordings_dir: str | Path,
-    reference_image_path: str | Path,
-    reference_text_path: str | Path,
-    output_dir: str | Path,
-) -> None:
+def evaluate_folder(recordings_dir: str | Path, reference_image_path: str | Path, reference_text_path: str | Path, output_dir: str | Path) -> None:
     recordings_dir = Path(recordings_dir)
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    reference_image, reference_text = load_reference(
-        reference_image_path, reference_text_path
-    )
+    reference_image, reference_text = load_reference(reference_image_path, reference_text_path)
     wav_files = sorted(recordings_dir.glob("*.wav"))
     if not wav_files:
         raise FileNotFoundError(f"No hay archivos WAV en {recordings_dir}.")
@@ -124,7 +112,7 @@ def evaluate_folder(
 
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Evalúa múltiples grabaciones WAV.")
-    parser.add_argument("--recordings", type=Path, default=PROJECT_ROOT / "recordings")
+    parser.add_argument("--recordings", type=Path, default=PROJECT_ROOT / "recordings" / "experiment")
     parser.add_argument("--reference-image", type=Path, default=PROJECT_ROOT / "data" / "input_image.png")
     parser.add_argument("--reference-text", type=Path, default=PROJECT_ROOT / "data" / "input_text.txt")
     parser.add_argument("--output-dir", type=Path, default=PROJECT_ROOT / "outputs" / "experiment")

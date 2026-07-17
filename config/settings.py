@@ -18,7 +18,7 @@ class ChannelConfig:
     frequencies_hz: tuple[float, float, float, float]
 
 
-# Audio y temporización -------------------------------------------------------
+# Audio y temporización
 SAMPLE_RATE = 44_100
 SLOT_DURATION_S = 0.010  # Cada observación elemental dura 10 ms.
 SAMPLES_PER_SLOT = int(SAMPLE_RATE * SLOT_DURATION_S)

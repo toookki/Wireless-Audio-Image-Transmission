@@ -25,11 +25,7 @@ class TransmissionInfo:
     effective_payload_rate_bps: float
 
 
-def create_transmission(
-    image_path: str | Path,
-    text: str,
-    output_path: str | Path,
-) -> TransmissionInfo:
+def create_transmission(image_path: str | Path, text: str, output_path: str | Path,) -> TransmissionInfo:
     """Genera el WAV 4-FSK/FDM que contiene la imagen y el texto.
 
     Pasos:
@@ -43,10 +39,7 @@ def create_transmission(
     packets = image_to_channel_packets(str(image_path))
     packets[3] = text_to_packet(text)
 
-    channel_symbols = {
-        channel.channel_id: bytes_to_symbols(packets[channel.channel_id])
-        for channel in CHANNELS
-    }
+    channel_symbols = {channel.channel_id: bytes_to_symbols(packets[channel.channel_id]) for channel in CHANNELS}
     waveform = build_fdm_waveform(channel_symbols)
     write_wav_mono(output_path, SAMPLE_RATE, waveform)
 

@@ -14,16 +14,12 @@ def pixel_error_rate(reference: Image.Image, received: Image.Image) -> float:
     reference_array = np.asarray(reference.convert("RGB"), dtype=np.uint8)
     received_array = np.asarray(received.convert("RGB"), dtype=np.uint8)
     if reference_array.shape != received_array.shape:
-        raise ValueError(
-            f"Dimensiones distintas: {reference_array.shape} vs {received_array.shape}."
-        )
+        raise ValueError(f"Dimensiones distintas: {reference_array.shape} vs {received_array.shape}.")
     wrong_pixels = np.any(reference_array != received_array, axis=2)
     return float(np.mean(wrong_pixels))
 
 
-def channel_value_error_rates(
-    reference: Image.Image, received: Image.Image
-) -> tuple[float, float, float]:
+def channel_value_error_rates(reference: Image.Image, received: Image.Image) -> tuple[float, float, float]:
     """Error de valores R, G y B por separado."""
 
     reference_array = np.asarray(reference.convert("RGB"), dtype=np.uint8)
@@ -44,13 +40,7 @@ def levenshtein_distance(reference: str, received: str) -> int:
         current = [row]
         for column, received_char in enumerate(received, start=1):
             substitution_cost = 0 if reference_char == received_char else 1
-            current.append(
-                min(
-                    current[-1] + 1,
-                    previous[column] + 1,
-                    previous[column - 1] + substitution_cost,
-                )
-            )
+            current.append(min(current[-1] + 1, previous[column] + 1, previous[column - 1] + substitution_cost))
         previous = current
     return previous[-1]
 

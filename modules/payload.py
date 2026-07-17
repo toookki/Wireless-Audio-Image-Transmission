@@ -14,12 +14,7 @@ from dataclasses import dataclass
 import numpy as np
 from PIL import Image
 
-from config.settings import (
-    IMAGE_HEIGHT,
-    IMAGE_WIDTH,
-    PACKET_MAGIC,
-    PACKET_VERSION,
-)
+from config.settings import (IMAGE_HEIGHT, IMAGE_WIDTH, PACKET_MAGIC, PACKET_VERSION)
 
 # magic, version, channel_id, payload_length, height, width, crc32
 _HEADER = struct.Struct(">2sBBIHHI")
@@ -57,11 +52,7 @@ def build_packet(packet: Packet) -> bytes:
     return header + packet.payload
 
 
-def parse_packet(
-    raw: bytes,
-    expected_channel_id: int | None = None,
-    require_crc: bool = True,
-) -> Packet:
+def parse_packet(raw: bytes, expected_channel_id: int | None = None, require_crc: bool = True) -> Packet:
     """Interpreta un paquete y opcionalmente exige que su CRC sea correcto.
 
     ``require_crc=False`` es útil en los experimentos: permite reconstruir un
@@ -70,44 +61,28 @@ def parse_packet(
     """
 
     if len(raw) < HEADER_SIZE:
-        raise PacketError(
-            f"Paquete demasiado corto: {len(raw)} bytes; se requieren al menos {HEADER_SIZE}."
-        )
+        raise PacketError(f"Paquete demasiado corto: {len(raw)} bytes; se requieren al menos {HEADER_SIZE}.")
 
-    magic, version, channel_id, payload_length, height, width, expected_crc = (
-        _HEADER.unpack(raw[:HEADER_SIZE])
-    )
+    magic, version, channel_id, payload_length, height, width, expected_crc = (_HEADER.unpack(raw[:HEADER_SIZE]))
 
     if magic != PACKET_MAGIC:
         raise PacketError(f"Magic incorrecto: {magic!r}.")
     if version != PACKET_VERSION:
         raise PacketError(f"Versión no soportada: {version}.")
     if expected_channel_id is not None and channel_id != expected_channel_id:
-        raise PacketError(
-            f"Canal recibido {channel_id}; se esperaba {expected_channel_id}."
-        )
+        raise PacketError(f"Canal recibido {channel_id}; se esperaba {expected_channel_id}.")
 
     total_length = HEADER_SIZE + payload_length
     if len(raw) < total_length:
-        raise PacketError(
-            f"Payload incompleto: llegaron {len(raw)} bytes y se requieren {total_length}."
-        )
+        raise PacketError(f"Payload incompleto: llegaron {len(raw)} bytes y se requieren {total_length}.")
 
     payload = raw[HEADER_SIZE:total_length]
     actual_crc = zlib.crc32(payload) & 0xFFFFFFFF
     crc_ok = actual_crc == expected_crc
     if require_crc and not crc_ok:
-        raise PacketError(
-            f"CRC incorrecto: calculado 0x{actual_crc:08X}, esperado 0x{expected_crc:08X}."
-        )
+        raise PacketError(f"CRC incorrecto: calculado 0x{actual_crc:08X}, esperado 0x{expected_crc:08X}.")
 
-    return Packet(
-        channel_id=channel_id,
-        payload=payload,
-        height=height,
-        width=width,
-        crc_ok=crc_ok,
-    )
+    return Packet(channel_id=channel_id, payload=payload, height=height, width=width, crc_ok=crc_ok)
 
 
 def bytes_to_symbols(data: bytes) -> np.ndarray:
@@ -182,9 +157,7 @@ def packets_to_image(packets: dict[int, Packet]) -> Image.Image:
     for channel_id in range(3):
         values = np.frombuffer(packets[channel_id].payload, dtype=np.uint8)
         if len(values) != expected_values:
-            raise PacketError(
-                f"Canal {channel_id}: {len(values)} valores; se esperaban {expected_values}."
-            )
+            raise PacketError(f"Canal {channel_id}: {len(values)} valores; se esperaban {expected_values}.")
         rgb_channels.append(values.reshape(height, width))
 
     rgb = np.stack(rgb_channels, axis=2)

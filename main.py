@@ -21,9 +21,9 @@ from modules.transmitter import create_transmission
 PROJECT_ROOT = Path(__file__).resolve().parent
 DEFAULT_IMAGE = PROJECT_ROOT / "data" / "input_image.png"
 DEFAULT_TEXT_FILE = PROJECT_ROOT / "data" / "input_text.txt"
-DEFAULT_TRANSMISSION = PROJECT_ROOT / "outputs" / "transmission.wav"
+DEFAULT_TRANSMISSION = PROJECT_ROOT / "outputs" / "physical" / "transmission.wav"
 DEFAULT_RECORDING = PROJECT_ROOT / "recordings" / "received.wav"
-DEFAULT_DECODED_DIR = PROJECT_ROOT / "outputs" / "decoded"
+DEFAULT_DECODED_DIR = PROJECT_ROOT / "outputs" / "physical" / "decoded"
 
 
 def _build_parser() -> argparse.ArgumentParser:
