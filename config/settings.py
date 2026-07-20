@@ -42,16 +42,14 @@ CHANNELS: tuple[ChannelConfig, ...] = (
     ChannelConfig(0, "red", (900.0, 1_100.0, 1_300.0, 1_500.0)),
     ChannelConfig(1, "green", (1_900.0, 2_100.0, 2_300.0, 2_500.0)),
     ChannelConfig(2, "blue", (2_900.0, 3_100.0, 3_300.0, 3_500.0)),
-    ChannelConfig(3, "text", (3_900.0, 4_100.0, 4_300.0, 4_500.0)),
+    ChannelConfig(3, "text", (3_900.0, 4_100.0, 4_300.0, 4_500.0))
 )
 
 CHANNEL_BY_ID = {channel.channel_id: channel for channel in CHANNELS}
 CHANNEL_BY_NAME = {channel.name: channel for channel in CHANNELS}
 
 # Secuencia conocida que permite verificar la alineación de símbolos.
-PREAMBLE_SYMBOLS: tuple[int, ...] = tuple(
-    [0, 1, 2, 3, 3, 2, 1, 0] * 4
-)
+PREAMBLE_SYMBOLS: tuple[int, ...] = tuple([0, 1, 2, 3, 3, 2, 1, 0] * 4)
 
 # Nivel de cada subcanal antes de normalizar la mezcla final.
 CHANNEL_AMPLITUDE = 0.22

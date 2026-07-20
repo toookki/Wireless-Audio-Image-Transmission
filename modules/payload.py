@@ -27,13 +27,15 @@ class PacketError(ValueError):
 
 @dataclass(frozen=True)
 class Packet:
-    """Paquete recuperado y estado de su verificación CRC."""
+    """Paquete recuperado y diagnósticos de integridad."""
 
     channel_id: int
     payload: bytes
     height: int = 0
     width: int = 0
     crc_ok: bool = True
+    header_ok: bool = True
+    payload_complete: bool = True
 
 
 def build_packet(packet: Packet) -> bytes:
@@ -83,6 +85,65 @@ def parse_packet(raw: bytes, expected_channel_id: int | None = None, require_crc
         raise PacketError(f"CRC incorrecto: calculado 0x{actual_crc:08X}, esperado 0x{expected_crc:08X}.")
 
     return Packet(channel_id=channel_id, payload=payload, height=height, width=width, crc_ok=crc_ok)
+
+
+def parse_packet_experimental(raw: bytes, *, expected_channel_id: int, expected_payload_length: int, expected_height: int = 0, expected_width: int = 0,
+) -> Packet:
+    """Extrae un payload usando la estructura fija conocida del experimento.
+
+    La cabecera se revisa para diagnóstico, pero sus campos no se utilizan
+    para decidir dónde comienza o cuánto mide el payload.
+
+    Esto permite medir el error aunque magic, versión, canal, longitud o
+    dimensiones hayan sido recibidos incorrectamente.
+    """
+
+    # Se toman los bytes disponibles de la cabecera.
+    header_bytes = raw[:HEADER_SIZE]
+    header_complete = len(header_bytes) == HEADER_SIZE
+
+    # Si la cabecera llegó incompleta, se completa temporalmente con ceros
+    # para que struct pueda desempaquetarla sin detener el experimento.
+    padded_header = header_bytes.ljust(HEADER_SIZE, b"\x00")
+
+    (magic, version, channel_id, payload_length, height, width, expected_crc) = _HEADER.unpack(padded_header)
+
+    # La cabecera se evalúa, pero un resultado False no detiene el proceso.
+    header_ok = (
+        header_complete
+        and magic == PACKET_MAGIC
+        and version == PACKET_VERSION
+        and channel_id == expected_channel_id
+        and payload_length == expected_payload_length
+        and height == expected_height
+        and width == expected_width
+    )
+
+    # En el experimento sabemos que el payload siempre comienza justo
+    # después de los HEADER_SIZE bytes.
+    payload_start = HEADER_SIZE
+    payload_end = payload_start + expected_payload_length
+    payload = raw[payload_start:payload_end]
+
+    payload_complete = len(payload) == expected_payload_length
+
+    # Si la grabación terminó antes, los bytes faltantes se completan con
+    # cero. Al comparar con la referencia aparecerán como errores reales.
+    if not payload_complete:
+        payload = payload.ljust(expected_payload_length, b"\x00")
+
+    actual_crc = zlib.crc32(payload) & 0xFFFFFFFF
+    crc_ok = payload_complete and actual_crc == expected_crc
+
+    return Packet(
+        channel_id=expected_channel_id,
+        payload=payload,
+        height=expected_height,
+        width=expected_width,
+        crc_ok=crc_ok,
+        header_ok=header_ok,
+        payload_complete=payload_complete,
+    )
 
 
 def bytes_to_symbols(data: bytes) -> np.ndarray:

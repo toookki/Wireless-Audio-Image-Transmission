@@ -17,6 +17,8 @@ from pathlib import Path
 from config.settings import CHANNELS
 from modules.receiver import decode_transmission, save_decoded
 from modules.transmitter import create_transmission
+from modules.visualization import save_receiver_diagnostics
+from modules.metrics import channel_value_error_rates, load_reference, pixel_error_rate, text_symbol_error_rate
 
 PROJECT_ROOT = Path(__file__).resolve().parent
 DEFAULT_IMAGE = PROJECT_ROOT / "data" / "input_image.png"
@@ -97,7 +99,6 @@ def _run_transmitter(args: argparse.Namespace) -> None:
     print(f"Duración: {info.duration_s:.2f} s")
     print(f"Bits útiles: {info.payload_bits}")
     print(f"Tasa útil aproximada: {info.effective_payload_rate_bps:.2f} bit/s")
-    print("Reproduce este WAV y grábalo sin cancelación de ruido ni formato MP3.")
 
 
 def _run_receiver(args: argparse.Namespace) -> None:
@@ -106,11 +107,33 @@ def _run_receiver(args: argparse.Namespace) -> None:
             f"No existe la grabación: {args.input}\n"
             "Guarda el audio como recordings/received.wav o usa --input."
         )
+    
+    reference_image_path = DEFAULT_IMAGE
+    reference_text_path = DEFAULT_TEXT_FILE
 
-    decoded = decode_transmission(args.input, strict_crc=False)
+    if not reference_image_path.exists():
+        raise FileNotFoundError(
+            f"No existe la imagen de referencia: {reference_image_path}"
+        )
+    
+    if not reference_text_path.exists():
+        raise FileNotFoundError(
+            f"No existe el texto de referencia: {reference_text_path}"
+        )
+    
+    reference_image, reference_text = load_reference(reference_image_path, reference_text_path)
+    expected_text_byte_length = len(reference_text.encode("utf-8"))
+
+    decoded = decode_transmission(args.input, strict_crc=False, allow_bad_header=True, expected_text_byte_length=expected_text_byte_length)
     save_decoded(decoded, args.output_dir)
 
+    diagnostics_path = save_receiver_diagnostics(reference_image=reference_image, reconstructed_image=decoded.image, output_dir=args.output_dir)
+    image_error = pixel_error_rate(reference_image, decoded.image)
+    (red_error, green_error, blue_error) = channel_value_error_rates(reference_image, decoded.image)
+    text_error = text_symbol_error_rate(reference_text, decoded.text)
+
     print("=== RECEPTOR ===")
+    print(f"Archivo procesado: {args.input}")
     print(f"Correlación de sincronía: {decoded.sync_correlation:.3f}")
     for channel in CHANNELS:
         diagnostic = decoded.diagnostics[channel.channel_id]
@@ -119,10 +142,24 @@ def _run_receiver(args: argparse.Namespace) -> None:
             f"Canal {channel.name:>5}: "
             f"preámbulo={diagnostic.preamble_score:.1%}, "
             f"margen={diagnostic.mean_decision_margin:.1%}, "
+            f"cabecera={'OK' if packet.header_ok else 'FALLÓ'}, "
+            f"payload={'COMPLETO' if packet.payload_complete else 'INCOMPLETO'}, "
             f"CRC={'OK' if packet.crc_ok else 'FALLÓ'}"
         )
+
+    print()
+    print("=== ERRORES ===")
+    print(f"Error por píxel: {image_error:.3%}")
+    print(f"Error de valores R: {red_error:.3%}")
+    print(f"Error de valores G: {green_error:.3%}")
+    print(f"Error de valores B: {blue_error:.3%}")
+    print(f"Error de texto: {text_error:.3%}")
+    print()
+    print(f"Texto original: {reference_text}")
     print(f"Texto recuperado: {decoded.text}")
+    print()
     print(f"Resultados guardados en: {args.output_dir}")
+    print(f"Figura de diagnóstico: {diagnostics_path}")
 
 
 def main() -> None:
