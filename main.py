@@ -107,7 +107,7 @@ def _run_receiver(args: argparse.Namespace) -> None:
             "Guarda el audio como recordings/received.wav o usa --input."
         )
 
-    decoded = decode_transmission(args.input)
+    decoded = decode_transmission(args.input, strict_crc=False)
     save_decoded(decoded, args.output_dir)
 
     print("=== RECEPTOR ===")
